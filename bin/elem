@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+
+var fs = require('fs')
+  , program = require('commander')
+  , path = require('path')
+  , mkdirp = require('mkdirp')
+  , rmdir = require('rimraf')
+  , basename = path.basename
+  , dirname = path.dirname
+  , resolve = path.resolve
+  , exists = fs.existsSync || path.existsSync;
+
+program
+  .version(require('../package.json').version)
+  .usage('[options] <file ...>')
+
+// program
+//   .command('build')
+//   .description('build')
+//   .action(build);
+
+program
+  .command('install')
+  .usage('[options] <class name>')
+  .description('install element')
+  .action(serve);
+
+program
+  .command('run')
+  .usage('[options] <directory>')
+  .option('-p, --port <number>', 'port (default: 8000)', Number, 8000)
+  .description('simple server for a root element')
+  .action(serve);
+
+function serve(dir, opts) {
+
+  if(arguments.length == 1) {
+    opts = dir;
+    dir = './';
+  }
+
+  root = path.resolve(dir);
+  console.log('base:',root);
+
+  var express = require('express');
+  var elem = require('../');
+  var app = express();
+
+  var frontend = elem(root);
+  frontend.build();
+
+  // function init() {
+  //   return {}
+  // }
+
+  app.use(frontend.middleware({bootloader: {}}));
+
+  // app.all(frontend.bootloader);
+
+  app.listen(opts.port);
+  console.log('listening on ' + opts.port);
+
+  return;
+}
+
+program.parse(process.argv);
