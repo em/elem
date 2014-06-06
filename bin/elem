@@ -49,13 +49,7 @@ function serve(dir, opts) {
   var frontend = elem(root);
   frontend.build();
 
-  // function init() {
-  //   return {}
-  // }
-
   app.use(frontend.middleware({bootloader: {}}));
-
-  // app.all(frontend.bootloader);
 
   app.listen(opts.port);
   console.log('listening on ' + opts.port);
