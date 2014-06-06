@@ -1,5 +1,5 @@
 # elem
-An insanely fast asset manager for node based around custom HTML elements. You can build your entire frontend on it or incorporate it into your existing app to add some additional structure, speed and stability. 
+An insanely fast asset manager/packager for node based on custom HTML elements. You can build your entire frontend on it or incorporate it into your existing app to add some additional structure, speed and stability. 
 
 ```
 app
@@ -37,18 +37,9 @@ module.exports = function(files, render) {
 }
 ```
 
-## How it works
-
-1. elem builds a directory of elements, and an index of the build tree. 
-   In development mode it efficiently tracks changes and only rebuilds what has changed on request. In production mode it requests compressed elements.json packages with all needed assets.
-
-2. elem/loader runs in the browsers and fetches assets from the build tree in low latency batch requests as elements are used. It maintains a shadow filesystem allowing direct access to files from Javascript.
-
-By keying off of elements, we are able to load entire features in a single requests when they are used. As an added benefit, we also get synchronous node-style `require()`'s in front-end Javascript for free.
-
 ## Creating Custom Elements
 
-To make the element `<widget>` we create a folder with some files in it. The folder name is the tag name.
+An element is just a folder who's name is the tag name. Certain sub-folders have [special directives](#special-folders) for loading.
 
 ```
 ui
@@ -57,7 +48,8 @@ ui
     widget.html.jade
     widget.css.styl
     hello.txt
-  components
+  window
+    jquery.js
 ```
 - Files with extensions like `widget.html.jade` are caught by the pre-processor and become `widget.html`.
 
@@ -72,7 +64,7 @@ ui
 *widget.js*:
 ```
 module.exports = function widget(files) {
-  this.innerHTML = files.hello.txt;
+  $(this).text(files.hello.txt);
 }
 ```
 
@@ -81,14 +73,27 @@ Giving the function two arguments makes it async:
 ```
 module.exports = function widget(files, done) {
   var self = this;
-  var id = $(this).attr('id');
 
-  $.get('/widgets/'+id, function(data) {
-    $('.widget_name', self).text(data.name); 
+  $.get('/content.txt', function(text) {
+    $(self).text(text);
     done();
   });
 }
 ```
+
+
+## Special Folders
+* `*/lib` is recursively pre-loaded before the element is applied. Put anything you want to require() in here so it is available when the element implementation. 
+
+* `*/components` are parsed as installed [components](http://component.io) and can be required globally.
+
+* `*/window` is recursively pre-loaded but executed without a module.exports.
+
+  This is where you would put classic global libraries like jQuery.
+
+  You could also `component install component/jquery` and `require('jquery')`. But jQuery was always designed to extend window. Using it as a module breaks plugins.
+
+  Everything in `window` is run in top-down order of directory depth. So to make jQuery plugins run after jQuery, you can put them in a `window/jquery-plugins/` folder.
 
 ## Express/Connect Middleware 
 
@@ -112,30 +117,29 @@ app.listen(3000);
 ## Client-side templating
 
 ```
-npm install jade
-ln -s node_modules/jade/jade.js frontend/window/
+component install jade
 ```
 
 ```
 widget
   widget.js
-  template.jade
-window
-  jade.js
+  template.js.jade
 ```
 
 widget.js
 ```
+var jade = require('jade');
+
 module.exports = function(files, done) {
-  jade.render(files.template.jade, {}, done);
+  jade.render(files.template.js, {}, done);
 }
 ```
 
-
 ## Package Management
-Elem has has built-in supports for [component](http://github.com/component).
+Elem has has built-in supports for [component](http://github.com/component/component).
 
 ```
+$ npm install -g component
 $ component install visionmedia/page.js
 ```
 
@@ -144,25 +148,12 @@ $ component install visionmedia/page.js
 var page = require('page');
 ```
 
-You can use libraries from bower and npm by symlinking:
+You can use libraries from bower or npm if you need to by symlinking:
 
 ```
 bower install jquery
 ln -s bower_components/jquery/dist/jquery.js frontend/window/
 ```
-
-## The `window` folder
-
-Put all classic libraries that extend `window` 
-in here. Such as jQuery and jQuery plugins. These are always loaded first, and they are not given a `module.exports` when they are run.
-
-They are also executed in order of direct depth, and file name length. This means that all you need to do to ensure that jQuery plugins load after jQuery is ensure they are named properly as `jquery.pluginname.js`.
-
-If unruly jQuery plugin authors don't name their plugins
-according to convention, you can make a sub-directory i.e. `window/jquery-plugins/`
-which will always be loaded after the files directly under
-`window`.
-
 
 ## Page Layouts
 
