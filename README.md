@@ -1,11 +1,9 @@
-This is a very early proof of concept for sharing with friends and getting feedback. Move along.
-
 # elem
 An insanely fast asset manager for node based around custom HTML elements. You can build your entire frontend on it or incorporate it into your existing app to add some additional structure, speed and stability. 
 
 ```
-myapp
-  frontend
+app
+  ui
     body
       body.html
     hello
@@ -53,7 +51,7 @@ By keying off of elements, we are able to load entire features in a single reque
 To make the element `<widget>` we create a folder with some files in it. The folder name is the tag name.
 
 ```
-frontend
+ui
   widget
     widget.js
     widget.html.jade
@@ -102,7 +100,8 @@ var ui = elem(__dirname+'/ui');
 
 app.use('/elements', ui.loader({pack: true}));
 
-// Include <script src="/elements/loader.js">
+// Remove this route and include
+// <script src="/elements/loader.js">
 // in a template if you don't want to use the bootloader.
 app.get('*', ui.boot('/elements'));
 
