@@ -530,17 +530,30 @@
     return fn;
   }
 
-  // Our little helper for simplifying paths
-  var aTag = document.createElement('a');
+  function normalize(path) {
+    var result = [];
+    var parts;
+    var token;
 
-  function resolve(base,rel) {
-    var basedir = ('/'+base).split('/').slice(0,-1).join('/');
-    var pathname = [basedir,rel].join('/');
+    parts = path.split('/');
 
-    aTag.href = pathname;
-    return aTag.pathname.slice(1);
+    for(var i=0, l=parts.length; i < l; ++i) {
+      token = parts[i];
+
+      if (token === '..') {
+        result.pop();
+      } else if (token && token !== '.') {
+        result.push(token);
+      }
+    }
+    return result.join('/').replace(/[\/]{2,}/g, '/'); 
   }
 
+  function resolve(base,rel) {
+    var basedir = base.split('/').slice(0,-1).join('/');
+    var pathname = [basedir,rel].join('/');
+    return normalize(pathname); 
+  }
 
   function isGlobal(dir) {
     while(dir) {
@@ -776,7 +789,7 @@
             // Old IEs needs this.
             // It's a classic way of getting HTML5
             // elements recognized.
-            // document.createElement(node);
+            document.createElement(node);
 
             if(parent.availTags.indexOf(node) == -1) { 
               parent.availTags.push(node);
@@ -814,7 +827,6 @@
     flush();
   }
 
-
   // We don't support IE6 or 7. We can do a much simpler document ready check.
   function domReady(callback) {
     if (document.readyState !== "loading") return callback();
@@ -836,3 +848,5 @@
   }
 
 })();
+
+
