@@ -220,8 +220,8 @@
    *
    */
   var netqueue;
-  function get(url,done) {
-    if(env == 'development') return ajax(root.path+url, done);
+  function get(path,done) {
+    if(env == 'development' || true) return ajax(root.path+path, done);
 
     // In production mode we request batch elements.json
     if(netqueue) {
@@ -399,7 +399,7 @@
           var globals = Object.keys(dir);
 
           globals = globals.sort(function(a,b) {
-            return b.length < a.length;
+            return b.length < a.length ? 1 : -1;
           });
 
           each(globals, function(name) {
@@ -438,61 +438,82 @@
       return;
     }
 
-
-    var resources = [];
-    var self = this;
-
-    // Build array of all child resources
-    for(var filename in this) {
-      if(filename == 'parent') continue;
-      var f = this[filename];
-
-      if(f instanceof File) {
-        resources.push(this[filename]);
-      }
-
-      if(f instanceof Dir) {
-        if(recursive || filename == this.tagName) {
-          // console.log(f, filename, this.tagName);
-          resources.push(f);
+    if(this.parent && env === 'production') {
+      if(this.path[this.path.length-1] == '/') debugger;
+      get(this.path + '/assets.json', function(err, json) {
+        var assets = JSON.parse(json);
+        // debugger;
+        for(var k in assets) {
+          var file = File.map[k];
+          if(!file) {
+            console.warn('Unexpected file in asset package', k);
+            continue;
+          }
+          file.data = assets[k];
+          file.complete();
         }
-      }
+
+        self.loaded = true;
+        self.loading = false;
+        done();
+      });
     }
+    else {
+      var resources = [];
+      var self = this;
 
-    resources = resources.filter(function(r) {
-      if(r.loading) return false;
-      return true;
-    });
+      // Build array of all child resources
+      for(var filename in this) {
+        if(filename == 'parent') continue;
+        var f = this[filename];
 
-    var count = resources.length;
-    if(!count) {
-      self.loaded = true;
-      self.loading = false;
-      done();
-    }
-
-    each(resources, function(resource) {
-      if(resource.loaded) {
-        if(--count == 0) {
-          self.loaded = true;
-          self.loading = false;
-          done();
-
-          flush();
+        if(f instanceof File) {
+          resources.push(this[filename]);
         }
-        return;
+
+        if(f instanceof Dir) {
+          if(recursive || filename == this.tagName) {
+            // console.log(f, filename, this.tagName);
+            resources.push(f);
+          }
+        }
       }
 
-      resource.load(function() {
-        if(--count == 0) {
-          self.loaded = true;
-          self.loading = false;
-          done();
+      resources = resources.filter(function(r) {
+        if(r.loading) return false;
+        return true;
+      });
 
-          flush();
+      var count = resources.length;
+      if(!count) {
+        self.loaded = true;
+        self.loading = false;
+        done();
+      }
+
+      each(resources, function(resource) {
+        if(resource.loaded) {
+          if(--count == 0) {
+            self.loaded = true;
+            self.loading = false;
+            done();
+
+            flush();
+          }
+          return;
         }
-      }, recursive);
-    });
+
+        resource.load(function() {
+          if(--count == 0) {
+            self.loaded = true;
+            self.loading = false;
+            done();
+
+            flush();
+          }
+        }, recursive);
+      });
+    }
 
   };
 

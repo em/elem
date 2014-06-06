@@ -31,10 +31,22 @@ describe('elem', function() {
       assert.equal(path, 'base/_build/body.html');
     });
 
-    it('can leave the extension alone', function() {
+    it('leaves singletons alone', function() {
       var frontend = elem('base');
       var path = frontend.getBuildPath('base/body.html');
       assert.equal(path, 'base/_build/body.html');
+    });
+
+    it('leaves extensionless alone', function() {
+      var frontend = elem('base');
+      var path = frontend.getBuildPath('base/body');
+      assert.equal(path, 'base/_build/body');
+    });
+
+    it('can handle a path with a . in it', function() {
+      var frontend = elem('base');
+      var path = frontend.getBuildPath('base/poop.js/body.html');
+      assert.equal(path, 'base/_build/poop.js/body.html');
     });
 
     it('normalizes', function() {
@@ -48,5 +60,6 @@ describe('elem', function() {
     var sample = path.join(__dirname,'sample');
     var frontend = elem(sample);
   });
+
 
 });

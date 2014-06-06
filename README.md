@@ -98,12 +98,13 @@ module.exports = function widget(files, done) {
 var express = require('express');
 var elem = require('elem');
 var app = express();
-var frontend = elem(path.join(__dirname,'frontend'), 'elements');
+var ui = elem(__dirname+'/ui');
 
-app.all(frontend.middleware);
+app.use('/elements', ui.loader({pack: true}));
 
-// Do this to bypass elem's bootloader and call elem.start() yourself
-// all.use(frontend.middleware);
+// Include <script src="/elements/loader.js">
+// in a template if you don't want to use the bootloader.
+app.get('*', ui.boot('/elements'));
 
 app.listen(3000);
 ```
