@@ -1,5 +1,6 @@
 # elem
-An insanely fast asset manager/packager for node based on custom HTML elements. You can build your entire frontend on it or incorporate it into your existing app to add some additional structure, speed and stability. 
+
+Build your frontend out of custom html elements that load fast and debug easily.
 
 ```
 app
@@ -8,7 +9,8 @@ app
       body.html
     hello
       hello.js
-      hello.txt
+      hello.css
+      message.txt
     components
       visionmedia-page.js
 ```
@@ -21,7 +23,7 @@ Hello World!
 *body.html*
 ```
 <a href="/hello">
-<hello message="hello.txt"/>
+<hello/>
 ```
 
 *hello.js*
@@ -30,7 +32,7 @@ var page = require('page');
 
 module.exports = function(files, render) {
   page('/hello', function() {
-    render(files.hello.txt);
+    render(files.message.txt);
   });
 
   page.start();
@@ -245,3 +247,6 @@ elem run widget
 ## License
 
 MIT
+
+
+[![Build Status](https://drone.io/github.com/em/elem/status.png)](https://drone.io/github.com/em/elem/latest)
