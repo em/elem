@@ -417,6 +417,7 @@
           });
         }
 
+        // debugger;
         runAll(self.window);
 
         self.load(done);
@@ -480,7 +481,7 @@
       }
 
       resources = resources.filter(function(r) {
-        if(r.loading) return false;
+        // if(r.loading) return false;
         return true;
       });
 
@@ -616,6 +617,7 @@
     var fn = jsfn(file.data, global);
 
     if(global) {
+      console.log(file);
       fn();
       return false;
     }
