@@ -49,13 +49,11 @@ function serve(dir, opts) {
   var frontend = elem(root);
   frontend.build();
 
-  app.use('elements', frontend.loader());
-  app.get('*', frontend.boot());
+  app.use('/elements', frontend.loader());
+  app.get('*', frontend.boot('/elements'));
 
   app.listen(opts.port);
   console.log('listening on ' + opts.port);
-
-  return;
 }
 
 program.parse(process.argv);

@@ -363,35 +363,35 @@
     this.observers.push(done);
   }
 
-  Dir.prototype.done = function() {
+  Dir.prototype.complete = function() {
     this.loaded = true;
     this.loading = false;
     this.observers.forEach(function(fn) {
       fn();
     });
     this.observers = [];
+
   }
 
   Dir.prototype.children = function(recursive) {
-    var resources = [];
+    var files = [];
 
     for(var filename in this) {
       if(filename == 'parent') continue;
       var f = this[filename];
 
       if(f instanceof File) {
-        resources.push(this[filename]);
+        files.push(this[filename]);
       }
 
       if(f instanceof Dir) {
         if(recursive || filename == this.tagName) {
-          // console.log(f, filename, this.tagName);
-          resources.push(f);
+          [].push.apply(files, f.children());
         }
       }
     }
 
-    return resources;
+    return files;
   }
 
   Dir.prototype.load = function(done, recursive) {
@@ -419,9 +419,9 @@
     // Just do things in order of the index...
     // This whole thing is a huge waste of bytes
     if(this.window) {
+      [].push.apply(resources, this.window.children(true));
 
-      resources = resources.concat( this.window.children(true) );
-
+      var self = this;
       this.window.load(function() {
         function runAll(dir) { 
           var globals = Object.keys(dir);
@@ -445,26 +445,18 @@
           });
         }
 
-        // debugger;
         runAll(self.window);
-
       }, true);
+
     }
 
     if(this.components) {
-      resources = resources.concat( this.components.children(true) );
+      [].push.apply(resources, this.components.children(true));
     }
 
     if(this.lib) {
-      resources = resources.concat( this.lib.children(true) );
+      [].push.apply(resources, this.lib.children(true));
     }
-
-    // if(this.lib && !this.lib.loaded) {
-    //   this.lib.load(function() {
-    //     self.load(done);
-    //   }, true);
-    //   return;
-    // }
 
     if(this.parent && env === 'production') {
       if(this.path[this.path.length-1] == '/') debugger;
@@ -487,43 +479,10 @@
       });
     }
     else {
-      var self = this;
+      [].push.apply(resources, this.children(true));
 
-      // Build array of all child resources
-      for(var filename in this) {
-        if(filename == 'parent') continue;
-        var f = this[filename];
-
-        if(f instanceof File) {
-          resources.push(this[filename]);
-        }
-
-        if(f instanceof Dir) {
-          if(recursive || filename == this.tagName) {
-            // console.log(f, filename, this.tagName);
-            resources.push(f);
-          }
-        }
-      }
-
-      var count = resources.length;
-      if(!count) {
-        self.done();
-      }
-
-      each(resources, function(resource) {
-        // if(resource.loaded) {
-        //   if(--count == 0) {
-        //     self.done();
-        //   }
-        //   return;
-        // }
-
-        resource.load(function() {
-          if(--count == 0) {
-            self.done();
-          }
-        }, recursive);
+      parallel(resources, function() {
+        self.complete()
       });
     }
 
@@ -821,7 +780,13 @@
     });
   }
 
+  var started = false;
   elem.start = function(basepath, setenv) {
+    if(started) {
+      throw 'elem.start() called twice!';
+    }
+    started = true;
+
     // Make sure the basepath ends in a slash
     if(basepath[basepath.length-1] != '/')
       basepath += '/';
