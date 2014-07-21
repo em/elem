@@ -18,7 +18,7 @@
   }
 
   function ppcss(css, filename) {
-    if(false || env == 'development') {
+    if(env == 'development') {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = filename;
@@ -378,6 +378,7 @@
 
     for(var filename in this) {
       if(filename == 'parent') continue;
+
       var f = this[filename];
 
       if(f instanceof File) {
@@ -694,6 +695,17 @@
         done();
         return;
       }
+
+      // No need to ajax load
+      // css since we link it
+      if(env == 'development'
+        && this.path.match(/\.css$/)) {
+        this.data = '';
+        self.complete();
+        done();
+        return;
+      }
+
 
       this.observe(done);
 
