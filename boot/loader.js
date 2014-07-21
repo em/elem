@@ -26,7 +26,8 @@
     }
     else {
       var dir = basedir(filename);
-      css = css.replace(/(url\("?)([^/|.+?\/\/])/g, '$1'+dir+'$2')
+      css = css.replace(/(@import\s*['"]?)([^/|.+?\/\/])/g, '$1'+dir+'$2')
+      css = css.replace(/(url\(['"]?)([^/|.+?\/\/])/g, '$1'+dir+'$2')
       var style = document.createElement('style');
       style.innerHTML = css;
       document.head.appendChild(style);
@@ -190,9 +191,6 @@
         });
       });
     });
-
-    // Flush HTTP request queue
-    flush();
   }
 
 
@@ -226,33 +224,8 @@
   /**
    *
    */
-  var netqueue;
   function get(path,done) {
-    if(env == 'development' || true) return ajax(root.path+path, done);
-
-    // In production mode we request batch elements.json
-    if(netqueue) {
-      netqueue[url] = done;
-      return;
-    }
-
-    netqueue = {};
-    netqueue[url] = done;
-  }
-
-  function flush() {
-    if(!netqueue) return;
-
-    var batchUrl = root.path+'elements.json?' + Object.keys(netqueue).map(encodeURIComponent).join('&');
-    var thisq =  netqueue;
-
-    netqueue = false;
-    ajax(batchUrl, function(err, json) {
-      var pack = JSON.parse(json);
-      for(var k in pack) {
-        thisq[k](null, pack[k]);
-      }
-    });
+    return ajax(root.path+path, done);
   }
 
 
@@ -335,9 +308,6 @@
         }
       });
     });
-
-
-    flush();
   }
 
   /**
@@ -393,39 +363,66 @@
     this.observers.push(done);
   }
 
+  Dir.prototype.done = function() {
+    this.loaded = true;
+    this.loading = false;
+    this.observers.forEach(function(fn) {
+      fn();
+    });
+    this.observers = [];
+  }
+
+  Dir.prototype.children = function(recursive) {
+    var resources = [];
+
+    for(var filename in this) {
+      if(filename == 'parent') continue;
+      var f = this[filename];
+
+      if(f instanceof File) {
+        resources.push(this[filename]);
+      }
+
+      if(f instanceof Dir) {
+        if(recursive || filename == this.tagName) {
+          // console.log(f, filename, this.tagName);
+          resources.push(f);
+        }
+      }
+    }
+
+    return resources;
+  }
+
   Dir.prototype.load = function(done, recursive) {
 
    var self = this;
 
+    if(this.loaded) {
+      done();
+      return;
+    }
 
-    // if(this.loaded) {
-    //   done2();
-    //   return;
-    // }
+    this.observe(done);
 
-    // if(this.loading) {
-    //   this.observe(done2);
-    //   return;
-    // }
+    if(this.loading) {
+      return;
+    }
 
     this.loading = true;
 
-   // function done() {
-   //  each(self.observers, function(done3) {
-   //    done3();
-   //  });
-   //  done2();
-   //  self.observers = [];
-   // }
 
+    var resources = [];
 
     // FIXME
     // We should not need to sort client-side
     // Just do things in order of the index...
     // This whole thing is a huge waste of bytes
-    if(this.window && !this.window.loaded) {
-      this.window.load(function() {
+    if(this.window) {
 
+      resources = resources.concat( this.window.children(true) );
+
+      this.window.load(function() {
         function runAll(dir) { 
           var globals = Object.keys(dir);
 
@@ -451,24 +448,23 @@
         // debugger;
         runAll(self.window);
 
-        self.load(done);
       }, true);
-      return;
     }
 
-    if(this.components && !this.components.loaded) {
-      this.components.load(function() {
-        self.load(done);
-      }, true);
-      return;
+    if(this.components) {
+      resources = resources.concat( this.components.children(true) );
     }
 
-    if(this.lib && !this.lib.loaded) {
-      this.lib.load(function() {
-        self.load(done);
-      }, true);
-      return;
+    if(this.lib) {
+      resources = resources.concat( this.lib.children(true) );
     }
+
+    // if(this.lib && !this.lib.loaded) {
+    //   this.lib.load(function() {
+    //     self.load(done);
+    //   }, true);
+    //   return;
+    // }
 
     if(this.parent && env === 'production') {
       if(this.path[this.path.length-1] == '/') debugger;
@@ -491,7 +487,6 @@
       });
     }
     else {
-      var resources = [];
       var self = this;
 
       // Build array of all child resources
@@ -511,37 +506,22 @@
         }
       }
 
-      // resources = resources.filter(function(r) {
-      //   // if(r.loading) return false;
-      //   return true;
-      // });
-
       var count = resources.length;
       if(!count) {
-        self.loaded = true;
-        self.loading = false;
-        done();
+        self.done();
       }
 
       each(resources, function(resource) {
-        if(resource.loaded) {
-          if(--count == 0) {
-            self.loaded = true;
-            self.loading = false;
-            done();
-
-            flush();
-          }
-          return;
-        }
+        // if(resource.loaded) {
+        //   if(--count == 0) {
+        //     self.done();
+        //   }
+        //   return;
+        // }
 
         resource.load(function() {
           if(--count == 0) {
-            self.loaded = true;
-            self.loading = false;
-            done();
-
-            flush();
+            self.done();
           }
         }, recursive);
       });
@@ -856,11 +836,7 @@
           scan(document, root);
         });
       });
-
-      flush();
     });
-
-    flush();
   }
 
   // We don't support IE6 or 7. We can do a much simpler document ready check.
