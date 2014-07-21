@@ -18,7 +18,7 @@
   }
 
   function ppcss(css, filename) {
-    if(env == 'development') {
+    if(false || env == 'development') {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = filename;
@@ -781,7 +781,7 @@
   }
 
   var started = false;
-  elem.start = function(basepath, setenv) {
+  elem.start = function(basepath, setenv, index) {
     if(started) {
       throw 'elem.start() called twice!';
     }
@@ -794,14 +794,23 @@
     root.path = basepath || '/';
     env = setenv || 'development';
 
-    // Load index immediately
-    loadIndex(function() {
+    function loadRoot() {
       root.load(function() {
         domReady(function() {
           scan(document, root);
         });
       });
-    });
+    }
+
+    if(index) {
+      parseIndex(index);
+      loadRoot();
+    }
+    else {
+      // Load index immediately
+      loadIndex(loadRoot);
+    }
+
   }
 
   // We don't support IE6 or 7. We can do a much simpler document ready check.
