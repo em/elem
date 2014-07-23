@@ -387,7 +387,7 @@
 
       if(f instanceof Dir) {
         if(recursive || filename == this.tagName) {
-          [].push.apply(files, f.children());
+          [].push.apply(files, f.children(recursive));
         }
       }
     }
