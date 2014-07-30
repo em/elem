@@ -612,8 +612,8 @@
     }
 
     var module = {exports: {}};
-    fn.call(window, module, module.exports, localRequire); 
     file.module = module;
+    fn.call(window, module, module.exports, localRequire); 
 
     return module.exports;
   }
