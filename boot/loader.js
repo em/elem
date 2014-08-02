@@ -81,6 +81,7 @@
    */
 
   function enhance(elem, dir, done) {
+
     if(elem.__elem_enhanced) {
       return;
     }
@@ -100,24 +101,22 @@
         // }
       }
 
-      unfreeze(elem);
-
       // Re-scan this element against
       // ancestor directories
       // The impl could have introduced
       // new matchable elements.
       var node = elem;
-      var queue = [];
       while(node) {
         var pdir = node.__elem_enhanced;
         if(pdir) {
-          queue.push(node);
-          scan(elem, pdir, true);
+          scan(elem, pdir);
         }
         node = node.parentElement;
       }
-    }
 
+      // And root
+      scan(elem, root);
+    }
 
     var html = require(dir.path,'html');
     if(html) {
@@ -160,19 +159,11 @@
   function scan(base, dir) {
     var uses = dir.findAll(base);
 
-    // IT IS VERY IMPORTANT
-    // THAT USES BE SORTED
-    // BY DOCUMENT LEVEL
-    // FOR FREEZING TO WORK
-    // (sibling order is not important)
-    uses = uses.sort(function(a,b) {
-      return a.compareDocumentPosition(b)
-    });
+    // uses = uses.sort(function(a,b) {
+    //   return b.compareDocumentPosition(a)
+    // });
 
     each(uses, function(elem) {
-      if(isFrozen(elem)) return;
-      freeze(elem);
-
       var tagName = elem.tagName.toLowerCase();
       var path = [];
 
@@ -259,39 +250,6 @@
     return elems;
   }
 
-
-  /**
-   * Freeze an element and all of its descendents
-   * All descendents of frozen elements are ignored by scan()
-   *
-   * @param {DOMElement}
-   */
-  function freeze(elem) {
-    elem.__frozen = true;
-  }
-
-  /**
-   * Unfreeze an element
-   *
-   * @param {DOMElement}
-   */
-  function unfreeze(elem) {
-    elem.__frozen = false;
-  }
-
-  /**
-   * Test if any ancestors is frozen
-   *
-   * @param {DOMElement}
-   */
-  function isFrozen(elem) {
-    while(elem) {
-      if(elem.__frozen) return true;
-      elem = elem.parentElement;
-    }
-
-    return false;
-  }
 
   /**
    * Simple parallel processor.
