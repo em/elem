@@ -89,9 +89,6 @@
     elem.__elem_enhanced = dir;
 
     function implDone(html) {
-      console.log('done', dir.path);
-
-
       if(html) {
         if(html instanceof Element) {
           elem.innerHTML = '';
