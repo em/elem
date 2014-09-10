@@ -547,9 +547,12 @@
       }
     }
 
-    if(!file) return false;
+    if(!file) {
+      return false;
+    }
 
-    if(ext != 'js') {
+    if(file.tagName != 'js') {
+      // if(file.tagName == 'jquery') debugger;
       return file.data;
     }
 
