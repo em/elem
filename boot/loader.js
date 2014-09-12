@@ -531,11 +531,11 @@
 
     // Make a list of possible paths
     var possible = [
-      globalModules[filename],
       relpath,
       relpath+'.'+ext,
       relpath+'/'+lastname+'.'+ext,
-      relpath+'/index.'+ext
+      relpath+'/index.'+ext,
+      globalModules[filename]
     ];
 
     // Try all of them in order
