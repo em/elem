@@ -328,6 +328,8 @@
   }
 
   Dir.prototype.complete = function() {
+    if(this.loaded) return;
+
     this.loaded = true;
     this.loading = false;
     this.observers.forEach(function(fn) {
@@ -359,11 +361,26 @@
     return files;
   }
 
+  Dir.prototype.isLoaded = function(recursive) {
+    if(this.loaded) {
+      return true;
+    }
+
+    if(this.loading) {
+
+      this.loaded = this.children().reduce(function(a,b) {
+        return a && b.isLoaded()
+      }, true);
+    }
+
+    return this.loaded;
+  }
+
   Dir.prototype.load = function(done, recursive) {
 
    var self = this;
 
-    if(this.loaded) {
+    if(this.isLoaded()) {
       done();
       return;
     }
@@ -423,33 +440,46 @@
       [].push.apply(resources, this.lib.children(true));
     }
 
-    if(this.parent && env === 'production') {
-      if(this.path[this.path.length-1] == '/') debugger;
-      get(this.path + '/assets.json', function(err, json) {
-        var assets = JSON.parse(json);
-        // debugger;
-        for(var k in assets) {
-          var file = File.map[k];
-          if(!file) {
-            console.warn('Unexpected file in asset package', k);
-            continue;
-          }
-          file.data = assets[k];
-          file.complete();
-        }
+    [].push.apply(resources, this.children(true));
 
-        self.loaded = true;
-        self.loading = false;
-        done();
-      });
-    }
-    else {
-      [].push.apply(resources, this.children(true));
+    // if(this.parent && env === 'production') {
+    //   if(this.path[this.path.length-1] == '/') debugger;
+
+
+
+    // //   // if(this.path == "_build/site/heading") debugger;
+    // //   // console.log(this.path);
+
+    // //   get(this.path + '/assets.json', function(err, json) {
+    // //     var assets = json.parse(json);
+    // //     for(var k in assets) {
+    // //       var file = file.map[k];
+    // //       if(!file) {
+    // //         console.warn('unexpected file in asset package', k);
+    // //         continue;
+    // //       }
+    // //       file.data = assets[k];
+    // //       file.complete();
+
+    // //       // var parent = file.parent;
+    // //       // while(parent) {
+    // //       //   parent.complete();
+    // //       //   parent = parent.parent;
+    // //       // }
+    // //     }
+
+    // //     self.complete();
+    // //     // self.loaded = true;
+    // //     // self.loading = false;
+    // //     // done();
+    // //   });
+    // // }
+    // else {
 
       parallel(resources, function() {
         self.complete()
       });
-    }
+    // }
 
   };
 
@@ -626,6 +656,10 @@
 
   , getData: function() { return this.data }
 
+  , isLoaded: function() {
+      return this.loaded;
+    }
+
   , complete: function() {
       this.loading = false;
       this.loaded = true;
@@ -634,6 +668,10 @@
 
       if(ext == 'js') {
         this.data = '\n// ' + this.path + '\n\n' + this.data;
+      }
+
+      if(ext == 'json') {
+        this.data = JSON.parse(this.data);
       }
 
       if(ext == 'css') {
@@ -673,7 +711,6 @@
         return;
       }
 
-
       this.observe(done);
 
       if(this.loading) {
@@ -682,29 +719,39 @@
 
       this.loading = true;
 
-      get(self.path, function(err, data) {
-        self.data = data;
+      var pkgpath = packages[this.path];
 
-        // FIXME
-        // self.parent.parent.load(function() {
+      // css since we link it
+      if(pkgpath) {
+        var pkg = File.map[pkgpath];
+
+        pkg.load(function() {
+          self.data = pkg.data[self.path];
           self.complete();
-        // });
+        });
+      }
+      else {
+        get(self.path, function(err, data) {
+          self.data = data;
+          self.complete();
 
-        if(err) {
-          console.error('Problem loading ' + self.path);
-          return;
-        }
-      });
-      
+          if(err) {
+            console.error('Problem loading ' + self.path);
+            return;
+          }
+        });
+      }
     }
   };
 
   var globalModules = {};
+  var packages = {};
 
   function parseIndex(json) {
     var files = json.files;
     var modules = json.modules;
     globalModules = json.modules;
+    packages = json.packages;
 
     var base = '_build/';
     each(files, function(file) {
