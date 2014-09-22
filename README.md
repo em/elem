@@ -23,7 +23,7 @@ Hello World!
 *body.html*
 ```
 <a href="/hello">
-<hello/>
+<hello></hello>
 ```
 
 *hello.js*
@@ -105,7 +105,9 @@ var elem = require('elem');
 var app = express();
 var ui = elem(__dirname+'/ui');
 
-app.use('/elements', ui.loader({pack: true}));
+var production = process.env.NODE_ENV == 'production';
+
+app.use('/elements', ui.loader({production: production}));
 
 // Remove this route and include
 // <script src="/elements/loader.js">
@@ -113,28 +115,6 @@ app.use('/elements', ui.loader({pack: true}));
 app.get('*', ui.boot('/elements'));
 
 app.listen(3000);
-```
-
-
-## Client-side templating
-
-```
-component install jade
-```
-
-```
-widget
-  widget.js
-  template.js.jade
-```
-
-widget.js
-```
-var jade = require('jade');
-
-module.exports = function(files, done) {
-  jade.render(files.template.js, {}, done);
-}
 ```
 
 ## Package Management
@@ -155,6 +135,59 @@ You can use libraries from bower or npm if you need to by symlinking:
 ```
 bower install jquery
 ln -s bower_components/jquery/dist/jquery.js frontend/window/
+```
+
+
+## Client-side templating
+
+```
+widget
+  widget.js
+  template.js.jade
+```
+
+widget.js
+```
+var template = require('template');
+
+module.exports = function(files, render) {
+  var locals = {};
+  render( template(locals) );
+}
+```
+
+## Client-side routing
+
+```
+component install page
+```
+
+```
+body.html
+hello.js
+```
+
+
+body.html
+```
+<hello></hello>
+```
+
+hello.html
+```
+<h1>Hi!</h1>
+<img src="reallybigimage.jpg">
+```
+
+hello.js
+```
+var page = require('page');
+
+module.exports = function(files, render) {
+  // hello.html will not be injected
+  // until the route is matched
+  page('/hello', render);
+}
 ```
 
 ## Page Layouts
