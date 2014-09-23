@@ -598,11 +598,10 @@
     if(file.module) return file.module.exports;
 
     // Run for the first time and save exports
-    function localRequire(name) {
-      var dep = require(name, 'js', file.path);
+    function localRequire(name, ext) {
+      ext = ext || 'js';
+      var dep = require(name, ext, file.path);
       if(!dep) {
-        // debugger;
-        var dep = require(name, 'js', file.path);
         throw new Error("failed to require "+name+" from "+file.path);
       }
       return dep;
