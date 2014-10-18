@@ -47,10 +47,10 @@ function serve(dir, opts) {
   var app = express();
 
   var frontend = elem(root);
-  frontend.build();
+  // frontend.build();
 
-  app.use('/elements', frontend.loader());
-  app.get('*', frontend.boot('/elements'));
+  app.use('/', frontend.loader());
+  app.get('*', frontend.boot('/'));
 
   app.listen(opts.port);
   console.log('listening on ' + opts.port);
