@@ -28,7 +28,7 @@ program
 program
   .command('run')
   .usage('[options] <directory>')
-  .option('-p, --port <number>', 'port (default: 8000)', Number, 8000)
+  .option('-p, --port <number>', 'port (default: 8000)', Number, process.env.PORT || 8000)
   .description('simple server for a root element')
   .action(serve);
 
