@@ -232,7 +232,7 @@
    * @param {Function} done Callback 
    */
   function loadIndex(done) {
-    get('_build/index.json', function(err, data) {
+    get('index.json', function(err, data) {
       if(err) {
         console.error('Elem build index not found. Did you build it?');
         return;
@@ -551,7 +551,7 @@
 
     var relpath = resolve(basename, filename); 
 
-    var lastname = relpath.split('/').filter(function(n){return n;}).slice(-1)[0];
+    var lastname = relpath.split('/').filter(function(n){return n;}).slice(-1)[0] || '';
 
     var file;
 
@@ -653,7 +653,6 @@
       }
     }
 
-  , getData: function() { return this.data }
 
   , isLoaded: function() {
       return this.loaded;
@@ -752,11 +751,11 @@
     globalModules = json.modules;
     packages = json.packages;
 
-    var base = '_build/';
+    var base = '/';
     each(files, function(file) {
 
       var nodes = file.split(/[\/|\.]/);
-      var numDirs = file.split('/').length;
+      var numDirs = file.split('/').length+1;
 
       var parent = root;
       var parentName = null;
@@ -782,7 +781,7 @@
             parent[node].tagName = node;
           }
           else {
-            var dir = parent[node] = parent[node] || new Dir(dirpath.slice(0,-1), parent);
+            var dir = parent[node] = parent[node] || new Dir(dirpath, parent);
 
             dir.tagName = node;
 

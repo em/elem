@@ -5,6 +5,7 @@ var fs = require('fs')
   , path = require('path')
   , mkdirp = require('mkdirp')
   , rmdir = require('rimraf')
+  , elem = require('../')
   , basename = path.basename
   , dirname = path.dirname
   , resolve = path.resolve
@@ -19,11 +20,6 @@ program
 //   .description('build')
 //   .action(build);
 
-program
-  .command('install')
-  .usage('[options] <class name>')
-  .description('install element')
-  .action(serve);
 
 program
   .command('run')
@@ -32,8 +28,14 @@ program
   .description('simple server for a root element')
   .action(serve);
 
-function serve(dir, opts) {
+program
+  .command('build')
+  .usage('[options] <directory> <output>')
+  .option('-d, --dev', 'development mode')
+  .description('build static site')
+  .action(build);
 
+function build(dir, outdir, opts) {
   if(arguments.length == 1) {
     opts = dir;
     dir = './';
@@ -42,8 +44,22 @@ function serve(dir, opts) {
   root = path.resolve(dir);
   console.log('base:',root);
 
+  var frontend = elem(root, !opts.dev);
+
+  frontend.build();
+}
+
+function serve(dir, opts) {
+  if(arguments.length == 1) {
+    opts = dir;
+    dir = './';
+  }
+
+
+  root = path.resolve(dir);
+  console.log('base:',root);
+
   var express = require('express');
-  var elem = require('../');
   var app = express();
 
   var frontend = elem(root);
