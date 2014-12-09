@@ -27,7 +27,7 @@
     else {
       var dir = basedir(filename);
       css = css.replace(/(@import\s*['?"?])([^\/|.*?\/\/])/g, '$1'+dir+'$2')
-      css = css.replace(/(url\(['?"?])([^\/|.*?\/\/|#])/g, '$1'+dir+'$2')
+      css = css.replace(/(url\(['?"?])([^\/|.*?\/\/|#|data:])/g, '$1'+dir+'$2')
 
       var style = document.createElement('style');
       style.innerHTML = css;
