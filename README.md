@@ -10,7 +10,7 @@ app
     hello
       hello.js
       hello.css
-      message.txt
+      message.js.txt
     components
       visionmedia-page.js
 ```
@@ -29,10 +29,11 @@ Hello World!
 *hello.js*
 ```
 var page = require('page');
+var message = require('./message');
 
-module.exports = function(files, render) {
+module.exports = function(render) {
   page('/hello', function() {
-    render(files.message.txt);
+    render(message);
   });
 
   page.start();
@@ -65,15 +66,15 @@ ui
 
 *widget.js*:
 ```
-module.exports = function widget(files) {
-  $(this).text(files.hello.txt);
+module.exports = function widget() {
+  $(this).find('.hello').text('hello');
 }
 ```
 
-Giving the function two arguments makes it async:
+Giving the function two arguments makes it async, delaying rendering and loading child elements:
 
 ```
-module.exports = function widget(files, done) {
+module.exports = function widget(done) {
   var self = this;
 
   $.get('/content.txt', function(text) {
@@ -150,7 +151,7 @@ widget.js
 ```
 var template = require('template');
 
-module.exports = function(files, render) {
+module.exports = function(render) {
   var locals = {};
   render( template(locals) );
 }

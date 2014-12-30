@@ -132,16 +132,20 @@
 
     var impl = require(dir.path,'js');
     if(impl) {
-      var fileData = dir.getData();
 
       if(typeof impl === 'function') {
-        if(impl.length < 2) {
-          var html = impl.call(elem, fileData); 
+        if(impl.length == 0) {
+          var html = impl.call(elem); 
           implDone(html);
         }
+        else if(impl.length == 2) {
+          impl.call(elem, {deprecated: 'deprecated'}, function(err,html) {
+            implDone(err, html);
+          }); 
+        }
         else {
-          impl.call(elem, fileData, function(err,html) {
-            implDone(err,html);
+          impl.call(elem, function(err,html) {
+            implDone(err, html);
           }); 
         }
       }
@@ -299,20 +303,6 @@
 
     return select(base, tags);
   };
-
-  /**
-   * Collect all data from files recursively
-   */
-  Dir.prototype.getData = function(){
-    var data = {};
-    for(var k in this) {
-      if(k == 'parent') continue;
-      var f = this[k];
-      if(f.getData)
-        data[k] = f.getData();
-    }
-    return data;
-  }
 
   Dir.prototype.getSelector = function() {
     var tags = this.availTags;
