@@ -1,6 +1,6 @@
 {
   "name": "elem",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "An asset manager based on custom elements",
   "keywords": [
     "component",
