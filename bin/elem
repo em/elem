@@ -30,15 +30,21 @@ program
 
 program
   .command('build')
-  .usage('[options] <directory> <output>')
+  .usage('[options] <directory>')
   .option('-d, --dev', 'development mode')
   .description('build static site')
   .action(build);
 
-function build(dir, outdir, opts) {
-  if(arguments.length == 1) {
-    opts = dir;
-    dir = './';
+function build() {
+  var opts, dir = '.';
+
+  if(arguments.length === 1) {
+    opts = arguments[0];
+  }
+
+  if(arguments.length === 2) {
+    dir = arguments[0];
+    opts = arguments[1];
   }
 
   root = path.resolve(dir);
