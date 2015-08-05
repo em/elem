@@ -1,0 +1,1 @@
+{"hello/hello.js":"var page = require('page');\n\nmodule.exports = function(files, render) {\n  page('/hello', function() {\n    render(files.hello.txt);\n  });\n\n  page.start();\n}\n\n"}

@@ -2,12 +2,12 @@
   var elem = window.elem = {};
 
   /**
-   * Root directory of all elements 
+   * Root directory of all elements
    */
   var root = new Dir('/');
 
   elem.root = root;
-  
+
   /**
    * Environment - "production" or "development"
    */
@@ -69,16 +69,16 @@
 
   /**
    * Apply self-named resources to an element.
-   * 
-   * e.g. Within directory page/, applies page.js if present 
    *
-   * If Javascript is found it is used to fill out an "exports" object on the directory. 
+   * e.g. Within directory page/, applies page.js if present
+   *
+   * If Javascript is found it is used to fill out an "exports" object on the directory.
    * If HTML is found it is used as the innerHTML ONLY if there is there are no existing children.
-   * If CSS is found it is linked to the document head. 
+   * If CSS is found it is linked to the document head.
    *
-   * @param {DOMElement} The target element to enhance 
+   * @param {DOMElement} The target element to enhance
    * @param {Dir} dir Custom element directory
-   * @param {Function} done Callback 
+   * @param {Function} done Callback
    */
 
   function enhance(elem, dir, done) {
@@ -135,18 +135,18 @@
 
       if(typeof impl === 'function') {
         if(impl.length == 0) {
-          var html = impl.call(elem); 
+          var html = impl.call(elem);
           implDone(html);
         }
         else if(impl.length == 2) {
           impl.call(elem, {deprecated: 'deprecated'}, function(err,html) {
             implDone(err, html);
-          }); 
+          });
         }
         else {
           impl.call(elem, function(err,html) {
             implDone(err, html);
-          }); 
+          });
         }
       }
       else {
@@ -161,10 +161,10 @@
   /**
    * Searches a base element for instances of custom elements,
    * loads the resources, and then calls enhance().
-   * 
+   *
    * @param {DOMElement} base The root element to search within
    * @param {Dir} dir Custom element directory
-   * @param {Function} done Callback 
+   * @param {Function} done Callback
    */
 
   function scan(base, dir) {
@@ -199,8 +199,8 @@
   /**
    * A simple XMLHttpRequest GET.
    *
-   * @param {String} url URL to fetch 
-   * @param {Function} done Callback 
+   * @param {String} url URL to fetch
+   * @param {Function} done Callback
    */
   function ajax(url,done) {
     var xmlhttp;
@@ -234,7 +234,7 @@
   /**
    * Load the index with AJAX.
    *
-   * @param {Function} done Callback 
+   * @param {Function} done Callback
    */
   function loadIndex(done) {
     get('index.json', function(err, data) {
@@ -396,7 +396,7 @@
 
       var self = this;
       this.window.load(function() {
-        function runAll(dir) { 
+        function runAll(dir) {
           var globals = Object.keys(dir);
 
           globals = globals.sort(function(a,b) {
@@ -503,13 +503,13 @@
         result.push(token);
       }
     }
-    return result.join('/').replace(/[\/]{2,}/g, '/'); 
+    return result.join('/').replace(/[\/]{2,}/g, '/');
   }
 
   function resolve(base,rel) {
     var basedir = base.split('/').slice(0,-1).join('/');
     var pathname = [basedir,rel].join('/');
-    return normalize(pathname); 
+    return normalize(pathname);
   }
 
   function isGlobal(dir) {
@@ -532,15 +532,15 @@
    * require('../body','html','/elements/header/header.js')
    *
    * @param {String} filename Module path
-   * @param {String} ext File extension to look for  
-   * @param {String} basename Reference point for relative paths  
+   * @param {String} ext File extension to look for
+   * @param {String} basename Reference point for relative paths
    */
 
   function require(filename, ext, basename) {
     basename = basename || ".";
 
 
-    var relpath = resolve(basename, filename); 
+    var relpath = resolve(basename, filename);
 
     var lastname = relpath.split('/').filter(function(n){return n;}).slice(-1)[0] || '';
 
@@ -601,7 +601,7 @@
 
     var module = {exports: {}};
     file.module = module;
-    fn.call(window, module, module.exports, localRequire); 
+    fn.call(window, module, module.exports, localRequire);
 
     return module.exports;
   }
@@ -622,7 +622,7 @@
     this.path = path;
     this.parent = parent;
 
-    File.map[path.toLowerCase()] = this; 
+    File.map[path.toLowerCase()] = this;
   }
 
   File.map = {};
@@ -782,13 +782,13 @@
             // elements recognized.
             // document.createElement(node);
 
-            if(parent.availTags.indexOf(node) == -1) { 
+            if(parent.availTags.indexOf(node) == -1) {
               parent.availTags.push(node);
             }
           }
 
           parent = parent[node];
-          parentName = node; 
+          parentName = node;
         }
       });
 
@@ -852,3 +852,6 @@
 })();
 
 
+
+
+elem.start("/","development",{"files":["body/body.html","hello/hello.js","components/visionmedia-page.js/index.js"],"modules":{"page":"components/visionmedia-page.js/index.js"},"packages":{}});
