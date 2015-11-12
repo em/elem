@@ -578,7 +578,7 @@
     }
 
     var domain = location.protocol + '//' + location.host;
-    file.data += '\r\n//@ sourceURL=' + domain + '/' + file.path;
+    file.data += '\r\n//@ sourceURL=' + domain + root.path + file.path;
     var global = isGlobal(file);
     var fn = jsfn(file.data, global);
 
