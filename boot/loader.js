@@ -7,6 +7,8 @@
   var root = new Dir('/');
 
   elem.root = root;
+  elem.enhance = enhance;
+  elem.scan = scan;
   
   /**
    * Environment - "production" or "development"
@@ -89,6 +91,24 @@
 
     elem.__elem_enhanced = dir;
 
+    function rescan() {
+      // Re-scan this element against
+      // ancestor directories
+      // The impl could have introduced
+      // new matchable elements.
+      var node = elem;
+      while(node) {
+        var pdir = node.__elem_enhanced;
+        if(pdir) {
+          scan(elem, pdir);
+        }
+        node = node.parentElement;
+      }
+
+      // And root
+      scan(elem, root);
+    }
+
     function implDone(html) {
       if(html) {
         if(html instanceof Element) {
@@ -108,21 +128,7 @@
         }
       }
 
-      // Re-scan this element against
-      // ancestor directories
-      // The impl could have introduced
-      // new matchable elements.
-      var node = elem;
-      while(node) {
-        var pdir = node.__elem_enhanced;
-        if(pdir) {
-          scan(elem, pdir);
-        }
-        node = node.parentElement;
-      }
-
-      // And root
-      scan(elem, root);
+      rescan();
     }
 
     var html = require(dir.path,'html');
@@ -144,9 +150,13 @@
           }); 
         }
         else {
-          impl.call(elem, function(err,html) {
+          function render(err,html) {
             implDone(err, html);
-          }); 
+          }
+
+          render.rescan = rescan; 
+
+          impl.call(elem, render); 
         }
       }
       else {
