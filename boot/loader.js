@@ -237,7 +237,7 @@
    *
    */
   function get(path,done) {
-    return ajax(root.path+path, done);
+    return ajax(elem.domain+root.path+path, done);
   }
 
 
@@ -587,8 +587,7 @@
       return file.data;
     }
 
-    var domain = location.protocol + '//' + location.host;
-    file.data += '\r\n//@ sourceURL=' + domain + root.path + file.path;
+    file.data += '\r\n//@ sourceURL=' + elem.domain + root.path + file.path;
     var global = isGlobal(file);
     var fn = jsfn(file.data, global);
 
@@ -808,7 +807,7 @@
   }
 
   var started = false;
-  elem.start = function(basepath, setenv, index) {
+  elem.start = function(domain, basepath, setenv, index) {
     if(started) {
       throw 'elem.start() called twice!';
     }
@@ -817,7 +816,7 @@
     // Make sure the basepath ends in a slash
     if(basepath[basepath.length-1] != '/')
       basepath += '/';
-
+    elem.domain = domain;
     root.path = basepath || '/';
     env = setenv || 'development';
 
