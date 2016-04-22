@@ -587,7 +587,7 @@
       return file.data;
     }
 
-    file.data += '\r\n//@ sourceURL=' + elem.domain + root.path + file.path;
+    file.data += '\r\n//# sourceURL=' + elem.domain + root.path + file.path;
     var global = isGlobal(file);
     var fn = jsfn(file.data, global);
 
