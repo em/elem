@@ -587,7 +587,11 @@
       return file.data;
     }
 
-    file.data += '\r\n//# sourceURL=' + elem.domain + root.path + file.path;
+    //file.data += '\r\n//# sourceURL=' + elem.domain + root.path + file.path;
+    // @FIXME: window.onerror can not catch meaningful stacktrace on Chrome.
+    // if we apply sourceURL becasue thiese urls are not relax by crossorigin attribute
+    // of script tag.
+    file.data += '\r\n//# sourceURL=' + root.path + file.path;
     var global = isGlobal(file);
     var fn = jsfn(file.data, global);
 
