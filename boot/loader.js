@@ -1,5 +1,8 @@
 (function() {
-  var elem = window.elem = {};
+  // Shim for webworkers
+  var global = (typeof window==='undefined') ? self : window;
+
+  var elem = global.elem = {};
 
   /**
    * Root directory of all elements 
@@ -9,6 +12,7 @@
   elem.root = root;
   elem.enhance = enhance;
   elem.scan = scan;
+  elem.require = require;
   
   /**
    * Environment - "production" or "development"
@@ -20,6 +24,10 @@
   }
 
   function ppcss(css, filename) {
+    if (typeof document === 'undefined') {
+      return css;
+    }
+
     if(env == 'development') {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -48,7 +56,6 @@
     if(!(dir instanceof Dir)) return html.data;
 
     return html.data.replace(/\.\//m, dir.path)
-
 
     return html.data;
   }
@@ -205,7 +212,6 @@
     });
   }
 
-
   /**
    * A simple XMLHttpRequest GET.
    *
@@ -215,7 +221,7 @@
   function ajax(url,done) {
     var xmlhttp;
 
-    if(window.XMLHttpRequest) {
+    if(typeof XMLHttpRequest !== 'undefined') {
       xmlhttp = new XMLHttpRequest(); // Browsers
     }
     else {
@@ -239,7 +245,6 @@
   function get(path,done) {
     return ajax(elem.domain+root.path+path, done);
   }
-
 
   /**
    * Load the index with AJAX.
@@ -337,7 +342,6 @@
       fn();
     });
     this.observers = [];
-
   }
 
   Dir.prototype.children = function(recursive) {
@@ -378,7 +382,6 @@
   }
 
   Dir.prototype.load = function(done, recursive) {
-
    var self = this;
 
     if(this.isLoaded()) {
@@ -401,7 +404,7 @@
     // We should not need to sort client-side
     // Just do things in order of the index...
     // This whole thing is a huge waste of bytes
-    if(this.window) {
+    if(this.window && typeof window !== 'undefined') {
       [].push.apply(resources, this.window.children(true));
 
       var self = this;
@@ -445,8 +448,6 @@
 
     // if(this.parent && env === 'production') {
     //   if(this.path[this.path.length-1] == '/') debugger;
-
-
 
     // //   // if(this.path == "_build/site/heading") debugger;
     // //   // console.log(this.path);
@@ -522,14 +523,6 @@
     return normalize(pathname); 
   }
 
-  function isGlobal(dir) {
-    while(dir) {
-      if(dir.tagName === 'window')
-        return true;
-      dir = dir.parent;
-    }
-    return false;
-  }
 
 
   /**
@@ -547,8 +540,8 @@
    */
 
   function require(filename, ext, basename) {
-    basename = basename || ".";
-
+    ext = ext || 'js';
+    basename = basename || "/";
 
     var relpath = resolve(basename, filename); 
 
@@ -592,10 +585,10 @@
     // if we apply sourceURL becasue thiese urls are not relax by crossorigin attribute
     // of script tag.
     file.data += '\r\n//# sourceURL=' + root.path + file.path;
-    var global = isGlobal(file);
-    var fn = jsfn(file.data, global);
+    var isGlobal = file.isGlobal();
+    var fn = jsfn(file.data, isGlobal);
 
-    if(global) {
+    if(isGlobal) {
       fn();
       return false;
     }
@@ -615,7 +608,7 @@
 
     var module = {exports: {}};
     file.module = module;
-    fn.call(window, module, module.exports, localRequire); 
+    fn.call(global, module, module.exports, localRequire); 
 
     return module.exports;
   }
@@ -662,6 +655,18 @@
 
   , isLoaded: function() {
       return this.loaded;
+    }
+
+
+  , isGlobal: function() {
+      var dir = this;
+
+      while(dir) {
+        if(dir.tagName === 'window')
+          return true;
+        dir = dir.parent;
+      }
+      return false;
     }
 
   , complete: function() {
@@ -818,17 +823,22 @@
     started = true;
 
     // Make sure the basepath ends in a slash
-    if(basepath[basepath.length-1] != '/')
+    if(basepath[basepath.length-1] != '/') {
       basepath += '/';
+    }
+
     elem.domain = domain;
     root.path = basepath || '/';
     env = setenv || 'development';
 
     function loadRoot() {
       root.load(function() {
-        domReady(function() {
-          scan(document, root);
-        });
+        // No document actually required (we can run in webworkers)
+        if (typeof document !== 'undefined') {
+          domReady(function() {
+            scan(document, root);
+          });
+        }
       });
     }
 
@@ -863,6 +873,8 @@
     }
   }
 
+
 })();
+
 
 
