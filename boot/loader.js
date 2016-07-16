@@ -187,9 +187,18 @@
   function scan(base, dir) {
     var uses = dir.findAll(base);
 
-    // uses = uses.sort(function(a,b) {
-    //   return b.compareDocumentPosition(a)
-    // });
+    uses = uses.sort(function(a,b) {
+      if( a === b) return 0;
+      if( !a.compareDocumentPosition) {
+        // support for IE8 and below
+        return a.sourceIndex - b.sourceIndex;
+      }
+      if( a.compareDocumentPosition(b) & 2) {
+        // b comes before a
+        return 1;
+      }
+      return -1;
+    });
 
     each(uses, function(elem) {
       var tagName = elem.tagName.toLowerCase();
