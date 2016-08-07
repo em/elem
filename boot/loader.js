@@ -455,42 +455,9 @@
 
     [].push.apply(resources, this.children(true));
 
-    // if(this.parent && env === 'production') {
-    //   if(this.path[this.path.length-1] == '/') debugger;
-
-    // //   // if(this.path == "_build/site/heading") debugger;
-    // //   // console.log(this.path);
-
-    // //   get(this.path + '/assets.json', function(err, json) {
-    // //     var assets = json.parse(json);
-    // //     for(var k in assets) {
-    // //       var file = file.map[k];
-    // //       if(!file) {
-    // //         console.warn('unexpected file in asset package', k);
-    // //         continue;
-    // //       }
-    // //       file.data = assets[k];
-    // //       file.complete();
-
-    // //       // var parent = file.parent;
-    // //       // while(parent) {
-    // //       //   parent.complete();
-    // //       //   parent = parent.parent;
-    // //       // }
-    // //     }
-
-    // //     self.complete();
-    // //     // self.loaded = true;
-    // //     // self.loading = false;
-    // //     // done();
-    // //   });
-    // // }
-    // else {
-
-      parallel(resources, function() {
-        self.complete()
-      });
-    // }
+    parallel(resources, function() {
+      self.complete()
+    });
 
   };
 

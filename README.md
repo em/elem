@@ -1,48 +1,10 @@
-# elem
+# Elem
 
-Build your frontend out of custom html elements that load fast and debug easily.
-
-```
-app
-  ui
-    body
-      body.html
-    hello
-      hello.js
-      hello.css
-      message.js.txt
-    components
-      visionmedia-page.js
-```
-
-*hello.txt*
-```
-Hello World!
-```
-
-*body.html*
-```
-<a href="/hello">
-<hello></hello>
-```
-
-*hello.js*
-```
-var page = require('page');
-var message = require('./message');
-
-module.exports = function(render) {
-  page('/hello', function() {
-    render(message);
-  });
-
-  page.start();
-}
-```
+An tiny and easy to use web framework based on making custom HTML elements.
 
 ## Creating Custom Elements
 
-An element is just a folder who's name is the tag name. Certain sub-folders have [special directives](#special-folders) for loading.
+An elem is just a folder who's name is the tag name.
 
 ```
 ui
@@ -54,6 +16,7 @@ ui
   window
     jquery.js
 ```
+
 - Files with extensions like `widget.html.jade` are caught by the pre-processor and become `widget.html`.
 
 - When a `<widget>` appears on the page `elem/loader` will pull down all of the files in the `widget` folder.
@@ -103,17 +66,17 @@ module.exports = function widget(done) {
 ```
 var express = require('express');
 var elem = require('elem');
-var app = express();
-var ui = elem(__dirname+'/ui');
+var server = express();
+var app = elem(__dirname+'/app');
 
 var production = process.env.NODE_ENV == 'production';
 
-app.use('/elements', ui.loader({production: production}));
+server.use('/app', ui.loader({production: production}));
 
 // Remove this route and include
-// <script src="/elements/loader.js">
+// <script src="/app/loader.js">
 // in a template if you don't want to use the bootloader.
-app.get('*', ui.boot('/elements'));
+app.get('*', ui.boot('/app'));
 
 app.listen(3000);
 ```
