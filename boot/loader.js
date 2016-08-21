@@ -74,22 +74,6 @@ var elem = {};
     return html.data;
   }
 
-  function ppjade(name, src) {
-    all[name].jade = src;
-  }
-
-  function attr2json(el) {
-    var result = {};
-    // var nodes=[], values=[];
-    for (var attr, i=0, attrs=el.attributes, l=attrs.length; i<l; i++){
-        attr = attrs.item(i)
-        result[attr.nodeName] = attr.nodeValue;
-        // nodes.push(attr.nodeName);
-        // values.push(attr.nodeValue);
-    }
-    return result;
-  }
-
   /**
    * Apply self-named resources to an element.
    * 
@@ -106,7 +90,14 @@ var elem = {};
 
   function enhance(elem, dir, done) {
 
+    // Always enhance once
     if(elem.__elem_enhanced) {
+      return;
+    }
+
+    // If removed from the dom after we
+    // scheduled it for enhancement, cancel
+    if (!elem.ownerDocument.contains(elem)) {
       return;
     }
 
@@ -642,7 +633,6 @@ var elem = {};
 
       var handlers = {
         html: pphtml,
-        jade: ppjade,
         css: ppcss,
         json: ppjson,
         js: ppjs

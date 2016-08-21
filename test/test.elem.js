@@ -28,20 +28,21 @@ describe('Elem', function() {
     });
     it('inits lastBuild using lastBuildFilename', function() {
       sample.build();
+      // Re-initialize
       sample = Elem(__dirname+'/sample');
       var json = JSON.parse( fs.readFileSync(__dirname+'/sample/_build/last_build.json') );
       expect(sample.lastBuild).eql(json);
     });
     it('works with 1 string arg', function() {
-      sample = Elem('hello');
+      var sample = Elem('hello');
       expect(sample.sourceDir).eq('hello');
     });
     it('works with 1 object arg', function() {
-      sample = Elem({sourceDir: 'hello'});
+      var sample = Elem({sourceDir: 'hello'});
       expect(sample.sourceDir).eq('hello');
     });
     it('works with 2 args', function() {
-      sample = Elem('hello', {tagName: 'yo'});
+      var sample = Elem('hello', {tagName: 'yo'});
       expect(sample.sourceDir).eq('hello');
       expect(sample.tagName).eq('yo');
     });
@@ -174,10 +175,29 @@ describe('Elem', function() {
     });
   });
 
-
   describe('build', function() {
+    it('creates _build dir', function() {
+      sample.build();
+      var exists = fs.existsSync(__dirname+'/sample/_build');
+      expect(exists).eq(true);
+    });
     it('writes index.json');
     it('writes last_build.json');
+  });
+
+  describe('clean', function() {
+    it('deletes _build dir', function() {
+      sample.build();
+      sample.clean();
+      var exists = fs.existsSync(__dirname+'/sample/_build');
+      expect(exists).eq(false);
+    });
+
+    it('empties lastBuild', function() {
+      sample.build();
+      sample.clean();
+      expect(sample.lastBuild).eql({});
+    });
   });
 
   describe('simulate', function() {
@@ -186,6 +206,31 @@ describe('Elem', function() {
       var domnode = sample.simulate();
       expect(domnode.hello).eq('hello');
     });
+    it('returns top dom element in provided html', function() {
+      sample.build();
+      var domnode = sample.simulate('<blah></blah>');
+      expect(domnode.tagName).eq('BLAH');
+    });
   });
 
+  describe('<wrapper>', function() {
+    it('wraps innerHTML in <span>', function() {
+      sample.build();
+      var domnode = sample.simulate('<wrapper>hello</wrapper>');
+
+      console.log(domnode.outerHTML);
+    });
+
+    it('does not enhance detached subelements', function() {
+      /**
+       * <wrapper> does a render(html) which replaces
+       * all of the old innerHTML. This tests that we
+       * do not enhance any of the removed elements.
+       */
+      sample.build();
+      var domnode = sample.simulate('<wrapper><wrapper>hello</wrapper></wrapper>', {count: 0});
+      var window = domnode.ownerDocument.defaultView;
+      expect(window.count).eq(2);
+    });
+  });
 });
