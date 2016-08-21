@@ -1,8 +1,6 @@
-(function() {
-  // Shim for webworkers
-  var global = (typeof window==='undefined') ? self : window;
+var elem = {};
 
-  var elem = global.elem = {};
+(function() {
 
   /**
    * Root directory of all elements 
@@ -13,6 +11,22 @@
   elem.enhance = enhance;
   elem.scan = scan;
   elem.require = require;
+
+  /**
+   * Various ways of exporting
+   */
+  // Module
+  if (typeof module !== 'undefined') {
+    module.exports = elem;
+  }
+  // Webworker
+  if (typeof self !== 'undefined') {
+    self.elem = elem;
+  }
+  // Window
+  if (typeof window !== 'undefined') {
+    window.elem = elem;
+  }
   
   /**
    * Environment - "production" or "development"
@@ -185,6 +199,8 @@
    */
 
   function scan(base, dir) {
+    dir = dir || root; // Default to root
+
     var uses = dir.findAll(base);
 
     uses = uses.sort(function(a,b) {
@@ -249,10 +265,23 @@
   }
 
   /**
+   * Gets a file relative to the root path
+   * If `development`, or `production` environment
+   * this uses XMLHTTPRequest, but in `test` mode
+   * it will use native node `fs.readFileSync`.
    *
+   * @param {String} path
+   * @param {Function} done function(err, data)
    */
   function get(path,done) {
-    return ajax(elem.domain+root.path+path, done);
+    if (env === 'test') {
+      var fs = nodeRequire('fs');
+      var data = ''+fs.readFileSync(root.path+path);
+      done(null, data);
+    }
+    else {
+      ajax(elem.domain+root.path+path, done);
+    }
   }
 
   /**
@@ -461,10 +490,10 @@
 
   };
 
-  function jsfn(txt, global) {
+  function jsfn(txt, isGlobal) {
     var fn;
 
-    if(global) {
+    if(isGlobal) {
       fn = new Function(txt);
     }
     else {
@@ -552,17 +581,13 @@
     }
 
     if(file.tagName != 'js') {
-      // if(file.tagName == 'jquery') debugger;
       return file.data;
     }
 
-    //file.data += '\r\n//# sourceURL=' + elem.domain + root.path + file.path;
-    // @FIXME: window.onerror can not catch meaningful stacktrace on Chrome.
-    // if we apply sourceURL becasue thiese urls are not relax by crossorigin attribute
-    // of script tag.
-    file.data += '\r\n//# sourceURL=' + root.path + file.path;
+    var js = file.data + '\r\n//# sourceURL=' + root.path + file.path;
+
     var isGlobal = file.isGlobal();
-    var fn = jsfn(file.data, isGlobal);
+    var fn = jsfn(js, isGlobal);
 
     if(isGlobal) {
       fn();
@@ -584,7 +609,7 @@
 
     var module = {exports: {}};
     file.module = module;
-    fn.call(global, module, module.exports, localRequire); 
+    fn.call(module.exports, module, module.exports, localRequire); 
 
     return module.exports;
   }
@@ -848,9 +873,4 @@
       fn(arr[i],i);
     }
   }
-
-
 })();
-
-
-
