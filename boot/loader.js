@@ -31,7 +31,7 @@ var elem = {};
   /**
    * Environment - "production" or "development"
    */
-  var env = 'development';
+  var mode = 'development';
 
   function basedir(filename) {
     return filename.split('/').slice(0,-1).join('/') + '/'
@@ -42,7 +42,7 @@ var elem = {};
       return css;
     }
 
-    if(env == 'development') {
+    if(mode == 'development') {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = filename;
@@ -237,6 +237,10 @@ var elem = {};
   function ajax(url,done) {
     var xmlhttp;
 
+    if (elem.buildId) {
+      url += '?'+elem.buildId;
+    }
+
     if(typeof XMLHttpRequest !== 'undefined') {
       xmlhttp = new XMLHttpRequest(); // Browsers
     }
@@ -265,7 +269,7 @@ var elem = {};
    * @param {Function} done function(err, data)
    */
   function get(path,done) {
-    if (env === 'test') {
+    if (mode === 'test') {
       var fs = nodeRequire('fs');
       var data = ''+fs.readFileSync(root.path+path);
       done(null, data);
@@ -273,25 +277,6 @@ var elem = {};
     else {
       ajax(elem.domain+root.path+path, done);
     }
-  }
-
-  /**
-   * Load the index with AJAX.
-   *
-   * @param {Function} done Callback 
-   */
-  function loadIndex(done) {
-    get('index.json', function(err, data) {
-      if(err) {
-        console.error('Elem build index not found. Did you build it?');
-        return;
-      }
-
-      data = JSON.parse(data);
-      parseIndex(data);
-      done();
-    });
-
   }
 
   function select(base, tags) {
@@ -703,7 +688,7 @@ var elem = {};
 
       // No need to ajax load
       // css since we link it
-      if(env == 'development'
+      if(mode == 'development'
         && this.path.match(/\.css$/)) {
         this.data = '';
         self.complete();
@@ -807,41 +792,28 @@ var elem = {};
   }
 
   var started = false;
-  elem.start = function(domain, basepath, setenv, index) {
+  elem.start = function(config) {
     if(started) {
       throw 'elem.start() called twice!';
     }
     started = true;
 
-    // Make sure the basepath ends in a slash
-    if(basepath[basepath.length-1] != '/') {
-      basepath += '/';
-    }
+    elem.domain = config.domain;
+    elem.buildId = config.buildId;
+    root.path = config.basePath || '/';
+    mode = config.mode || 'development';
 
-    elem.domain = domain;
-    root.path = basepath || '/';
-    env = setenv || 'development';
+    parseIndex(config.index);
 
-    function loadRoot() {
-      root.load(function() {
-        // No document actually required (we can run in webworkers)
-        if (typeof document !== 'undefined') {
-          domReady(function() {
-            scan(document, root);
-          });
-        }
-      });
-    }
-
-    if(index) {
-      parseIndex(index);
-      loadRoot();
-    }
-    else {
-      // Load index immediately
-      loadIndex(loadRoot);
-    }
-
+    root.load(function() {
+      // No document actually required
+      // (we can run in webworkers)
+      if (typeof document !== 'undefined') {
+        domReady(function() {
+          scan(document, root);
+        });
+      }
+    });
   }
 
   // We don't support IE6 or 7. We can do a much simpler document ready check.

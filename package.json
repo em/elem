@@ -1,6 +1,6 @@
 {
   "name": "elem",
-  "version": "0.0.51",
+  "version": "0.0.53",
   "description": "An asset manager based on custom elements",
   "keywords": [
     "component",
@@ -35,7 +35,8 @@
     "rimraf": "~2.5.4",
     "serve-static": "^1.11.1",
     "stylus": "~0.54.5",
-    "uglify-js": "~2.7.3"
+    "uglify-js": "~2.7.3",
+    "uid": "0.0.2"
   },
   "devDependencies": {
     "mocha": "~3.0.2",
