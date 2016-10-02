@@ -450,15 +450,19 @@ var elem = {};
 
     }
 
-    if(this.components) {
-      [].push.apply(resources, this.components.children(true));
+    // If not in test mode, recursively load
+    // all children automatically.
+    //
+    // Since test mode can synchronously read
+    // files as they are required we can speed
+    // up tests by only loading them when they
+    // are required, later.
+    //
+    // The browser on the other hand, must have
+    // everything available beforehand.
+    if (mode !== 'test') {
+      [].push.apply(resources, this.children(true));
     }
-
-    if(this.lib) {
-      [].push.apply(resources, this.lib.children(true));
-    }
-
-    [].push.apply(resources, this.children(true));
 
     parallel(resources, function() {
       self.complete()
@@ -554,6 +558,14 @@ var elem = {};
 
     if(!file) {
       return false;
+    }
+
+    // For test mode, since we don't load children
+    // recursively, we need to do it here on require.
+    // And test mode loading is synchronous so this
+    // will complete immediately.
+    if (mode === 'test') {
+      file.load(function noop(){});
     }
 
     if(file.tagName != 'js') {
