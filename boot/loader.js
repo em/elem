@@ -1,7 +1,6 @@
 var elem = {};
 
 (function() {
-
   /**
    * Root directory of all elements 
    */
@@ -11,6 +10,8 @@ var elem = {};
   elem.enhance = enhance;
   elem.scan = scan;
   elem.require = require;
+  elem.allTags = {};
+  elem.findAssociatedDir = findAssociatedDir;
 
   /**
    * Various ways of exporting
@@ -75,6 +76,14 @@ var elem = {};
   }
 
   /**
+   * TODO: This needs to be able to handle conflicting
+   *       names in different directories.
+   */
+  function findAssociatedDir(node) {
+    return elem.allTags[node.tagName];
+  }
+
+  /**
    * Apply self-named resources to an element.
    * 
    * e.g. Within directory page/, applies page.js if present 
@@ -87,13 +96,18 @@ var elem = {};
    * @param {Dir} dir Custom element directory
    * @param {Function} done Callback 
    */
-
-  function enhance(elem, dir, done) {
+  function enhance(elem, dir) {
+    if (!elem) {
+      return false;
+    }
 
     // Always enhance once
-    if(elem.__elem_enhanced) {
-      return;
+    if (elem.__elem_enhanced) {
+      return true;
     }
+
+    dir = dir || findAssociatedDir(elem);
+    if (!dir) return false;
 
     // If removed from the dom after we
     // scheduled it for enhancement, cancel
@@ -103,7 +117,7 @@ var elem = {};
 
     elem.__elem_enhanced = dir;
 
-    function rescan() {
+    function rescan(node) {
       // Re-scan this element against
       // ancestor directories
       // The impl could have introduced
@@ -121,7 +135,7 @@ var elem = {};
       scan(elem, root);
     }
 
-    function implDone(html) {
+    function render(html) {
       if(html) {
         if(html instanceof Element) {
           elem.innerHTML = '';
@@ -154,29 +168,21 @@ var elem = {};
       if(typeof impl === 'function') {
         if(impl.length == 0) {
           var html = impl.call(elem); 
-          implDone(html);
+          render(html);
         }
         else if(impl.length == 2) {
-          impl.call(elem, {deprecated: 'deprecated'}, function(err,html) {
-            implDone(err, html);
-          }); 
+          impl.call(elem, {deprecated: 'deprecated'}, render); 
         }
         else {
-          function render(err,html) {
-            implDone(err, html);
-          }
-
-          render.rescan = rescan; 
-
           impl.call(elem, render); 
         }
       }
       else {
-        implDone();
+        render();
       }
     }
     else {
-      implDone();
+      render();
     }
   }
 
@@ -186,7 +192,6 @@ var elem = {};
    * 
    * @param {DOMElement} base The root element to search within
    * @param {Dir} dir Custom element directory
-   * @param {Function} done Callback 
    */
 
   function scan(base, dir) {
@@ -331,16 +336,6 @@ var elem = {};
     }
 
     return select(base, tags);
-  };
-
-  Dir.prototype.getSelector = function() {
-    var tags = this.availTags;
-
-    if(this.parent) {
-      tags = tags.concat(this.parent.availTags);
-    }
-
-    return tags.join(',');
   };
 
   Dir.prototype.observe = function(done) {
@@ -783,6 +778,9 @@ var elem = {};
             var dir = parent[node] = parent[node] || new Dir(dirpath, parent);
 
             dir.tagName = node;
+            elem.allTags[node.toUpperCase()] = dir;
+            // elem.allTags[node] = elem.allTags[node] || [];
+            // elem.allTags[node].push(dir);
 
             // Old IEs needs this.
             // It's a classic way of getting HTML5
@@ -822,6 +820,7 @@ var elem = {};
       // (we can run in webworkers)
       if (typeof document !== 'undefined') {
         domReady(function() {
+          setupDOMHooks();
           scan(document, root);
         });
       }
@@ -840,6 +839,29 @@ var elem = {};
       removeListener.call(document, eventName, arguments.callee, false )
       callback()
     }, false )
+  }
+
+  function setupDOMHooks() {
+    var _appendChild = HTMLElement.prototype.appendChild;
+    HTMLElement.prototype.appendChild = function(child) {
+      var result = _appendChild.apply(this, arguments);
+      elem.enhance(child);
+      return result;
+    }
+
+    var _insertBefore = HTMLElement.prototype.appendChild;
+    HTMLElement.prototype.insertBefore = function(noop, child) {
+      var result = _insertBefore.apply(this, arguments);
+      elem.enhance(child);
+      return result;
+    }
+
+    var _replaceChild = HTMLElement.prototype.replaceChild;
+    HTMLElement.prototype.replaceChild = function(noop, child) {
+      var result = _replaceChild.apply(this, arguments);
+      elem.enhance(child);
+      return result;
+    }
   }
 
   function each(arr,fn) {
