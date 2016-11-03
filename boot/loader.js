@@ -849,7 +849,7 @@ var elem = {};
       return result;
     }
 
-    var _insertBefore = HTMLElement.prototype.appendChild;
+    var _insertBefore = HTMLElement.prototype.insertBefore;
     HTMLElement.prototype.insertBefore = function(noop, child) {
       var result = _insertBefore.apply(this, arguments);
       elem.enhance(child);
