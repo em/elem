@@ -218,8 +218,8 @@ var elem = {};
 
       var tmp = dir;
       while(tmp) {
-        if(tmp[tagName]) {
-          path.unshift(tmp[tagName]);
+        if(tmp.children[tagName]) {
+          path.unshift(tmp.children[tagName]);
         }
         tmp = tmp.parent;
       }
@@ -326,6 +326,7 @@ var elem = {};
     this.path = path;
     this.availTags = [];
     this.observers = [];
+    this.children = {};
   }
 
   Dir.prototype.findAll = function(base) {
@@ -353,21 +354,19 @@ var elem = {};
     this.observers = [];
   }
 
-  Dir.prototype.children = function(recursive) {
+  Dir.prototype.getChildren = function(recursive) {
     var files = [];
 
-    for(var filename in this) {
-      if(filename == 'parent') continue;
-
-      var f = this[filename];
+    for(var filename in this.children) {
+      var f = this.children[filename];
 
       if(f instanceof File) {
-        files.push(this[filename]);
+        files.push(this.children[filename]);
       }
 
       if(f instanceof Dir) {
         if(recursive || filename == this.tagName) {
-          [].push.apply(files, f.children(recursive));
+          [].push.apply(files, f.getChildren(recursive));
         }
       }
     }
@@ -382,7 +381,7 @@ var elem = {};
 
     if(this.loading) {
 
-      this.loaded = this.children().reduce(function(a,b) {
+      this.loaded = this.getChildren().reduce(function(a,b) {
         return a && b.isLoaded()
       }, true);
     }
@@ -413,34 +412,33 @@ var elem = {};
     // We should not need to sort client-side
     // Just do things in order of the index...
     // This whole thing is a huge waste of bytes
-    if(this.window && typeof window !== 'undefined') {
-      [].push.apply(resources, this.window.children(true));
+    if(this.children.window && typeof window !== 'undefined') {
+      [].push.apply(resources, this.children.window.getChildren(true));
 
       var self = this;
-      this.window.load(function() {
+      this.children.window.load(function() {
         function runAll(dir) { 
-          var globals = Object.keys(dir);
+          var globals = Object.keys(dir.children);
 
           globals = globals.sort(function(a,b) {
             return b.length < a.length ? 1 : -1;
           });
 
           each(globals, function(name) {
-            if(dir[name] instanceof File) {
-              var path = dir[name].path;
+            if(dir.children[name] instanceof File) {
+              var path = dir.children[name].path;
               require(path,'js');
             }
           });
 
           each(globals, function(name) {
-            if(name == 'parent') return;
-            if(dir[name] instanceof Dir) {
-              runAll(dir[name]);
+            if(dir.children[name] instanceof Dir) {
+              runAll(dir.children[name]);
             }
           });
         }
 
-        runAll(self.window);
+        runAll(self.children.window);
       }, true);
 
     }
@@ -456,7 +454,7 @@ var elem = {};
     // The browser on the other hand, must have
     // everything available beforehand.
     if (mode !== 'test') {
-      [].push.apply(resources, this.children(true));
+      [].push.apply(resources, this.getChildren(true));
     }
 
     parallel(resources, function() {
@@ -771,11 +769,11 @@ var elem = {};
 
           if(i == nodes.length-1) {
             var resource = new File(file, parent);
-            parent[node] = resource;
-            parent[node].tagName = node;
+            parent.children[node] = resource;
+            parent.children[node].tagName = node;
           }
           else {
-            var dir = parent[node] = parent[node] || new Dir(dirpath, parent);
+            var dir = parent.children[node] = parent.children[node] || new Dir(dirpath, parent);
 
             dir.tagName = node;
             elem.allTags[node.toUpperCase()] = dir;
@@ -792,7 +790,7 @@ var elem = {};
             }
           }
 
-          parent = parent[node];
+          parent = parent.children[node];
           parentName = node; 
         }
       });

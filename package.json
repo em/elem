@@ -1,6 +1,6 @@
 {
   "name": "elem",
-  "version": "0.0.59",
+  "version": "0.0.60",
   "description": "An asset manager based on custom elements",
   "keywords": [
     "component",
@@ -16,7 +16,7 @@
     "elem": "./bin/elem"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "node_modules/.bin/mocha"
   },
   "author": "Emery Denuccio",
   "license": "MIT",
@@ -39,7 +39,7 @@
     "uid": "0.0.2"
   },
   "devDependencies": {
-    "mocha": "~3.0.2",
+    "mocha": "~3.1.2",
     "expect": "~1.20.2",
     "assert": "~1.4.1"
   }
